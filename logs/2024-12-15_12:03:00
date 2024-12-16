@@ -1,0 +1,46 @@
+INFO:root:Script started...
+ERROR:root:Message: 
+Stacktrace:
+0   chromedriver                        0x0000000102a3faf0 cxxbridge1$str$ptr + 3651580
+1   chromedriver                        0x0000000102a38340 cxxbridge1$str$ptr + 3620940
+2   chromedriver                        0x00000001024a04b4 cxxbridge1$string$len + 89224
+3   chromedriver                        0x00000001024e4898 cxxbridge1$string$len + 368748
+4   chromedriver                        0x000000010251e0fc cxxbridge1$string$len + 604368
+5   chromedriver                        0x00000001024d90b0 cxxbridge1$string$len + 321668
+6   chromedriver                        0x00000001024d9d00 cxxbridge1$string$len + 324820
+7   chromedriver                        0x0000000102a0ae34 cxxbridge1$str$ptr + 3435328
+8   chromedriver                        0x0000000102a0e14c cxxbridge1$str$ptr + 3448408
+9   chromedriver                        0x00000001029f21a8 cxxbridge1$str$ptr + 3333812
+10  chromedriver                        0x0000000102a0ea0c cxxbridge1$str$ptr + 3450648
+11  chromedriver                        0x00000001029e39b4 cxxbridge1$str$ptr + 3274432
+12  chromedriver                        0x0000000102a29120 cxxbridge1$str$ptr + 3558956
+13  chromedriver                        0x0000000102a2929c cxxbridge1$str$ptr + 3559336
+14  chromedriver                        0x0000000102a37fb4 cxxbridge1$str$ptr + 3620032
+15  libsystem_pthread.dylib             0x00000001890fb2e4 _pthread_start + 136
+16  libsystem_pthread.dylib             0x00000001890f60fc thread_start + 8
+Traceback (most recent call last):
+  File "/Users/rzhandos/files/emircargo/src/other.py", line 50, in get_data
+    card = WebDriverWait(driver, 15).until(
+  File "/Users/rzhandos/files/emircargo/.env/lib/python3.9/site-packages/selenium/webdriver/support/wait.py", line 105, in until
+    raise TimeoutException(message, screen, stacktrace)
+selenium.common.exceptions.TimeoutException: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000102a3faf0 cxxbridge1$str$ptr + 3651580
+1   chromedriver                        0x0000000102a38340 cxxbridge1$str$ptr + 3620940
+2   chromedriver                        0x00000001024a04b4 cxxbridge1$string$len + 89224
+3   chromedriver                        0x00000001024e4898 cxxbridge1$string$len + 368748
+4   chromedriver                        0x000000010251e0fc cxxbridge1$string$len + 604368
+5   chromedriver                        0x00000001024d90b0 cxxbridge1$string$len + 321668
+6   chromedriver                        0x00000001024d9d00 cxxbridge1$string$len + 324820
+7   chromedriver                        0x0000000102a0ae34 cxxbridge1$str$ptr + 3435328
+8   chromedriver                        0x0000000102a0e14c cxxbridge1$str$ptr + 3448408
+9   chromedriver                        0x00000001029f21a8 cxxbridge1$str$ptr + 3333812
+10  chromedriver                        0x0000000102a0ea0c cxxbridge1$str$ptr + 3450648
+11  chromedriver                        0x00000001029e39b4 cxxbridge1$str$ptr + 3274432
+12  chromedriver                        0x0000000102a29120 cxxbridge1$str$ptr + 3558956
+13  chromedriver                        0x0000000102a2929c cxxbridge1$str$ptr + 3559336
+14  chromedriver                        0x0000000102a37fb4 cxxbridge1$str$ptr + 3620032
+15  libsystem_pthread.dylib             0x00000001890fb2e4 _pthread_start + 136
+16  libsystem_pthread.dylib             0x00000001890f60fc thread_start + 8
+
+INFO:root:Script ended...
