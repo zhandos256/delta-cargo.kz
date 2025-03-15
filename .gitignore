@@ -3,3 +3,6 @@
 env
 venv
 .DS_Store
+logs
+*.sqlite
+*.sqlite3
