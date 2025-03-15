@@ -11,6 +11,8 @@ def main():
         login(driver=driver)
         data = get_data(driver=driver)
         data_handler(data)
+        if DEBUG:
+            input('Press enter to exit...')
     except KeyboardInterrupt:
         pass
     finally:
