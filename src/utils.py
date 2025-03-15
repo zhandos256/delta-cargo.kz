@@ -3,7 +3,7 @@ import requests
 from const import MAGIC, PUSHOVEOR_USER_TOKEN, PUSHOVER_TOKEN, PUSHOVER_URL
 
 
-def send_notification(msg: str) -> bool:
+def send_notification(msg: str) -> int:
     payload = {
         'token': PUSHOVER_TOKEN,
         'user': PUSHOVEOR_USER_TOKEN,
