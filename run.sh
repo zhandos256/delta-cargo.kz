@@ -1,5 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
-cd ~/files/emircargo
-source .venv/bin/activate
-python src/main.py DEBUG=0 HEADLESS=1
+source ./.venv/bin/activate
+python ./src/main.py
