@@ -7,3 +7,5 @@ logs
 *.sqlite
 *.sqlite3
 *.log
+logs
+*.logs
