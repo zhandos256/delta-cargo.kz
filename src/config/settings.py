@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from config.const import  BOT_TOKEN, COMMANDS, TIMEZONE, SCHEDULER_JOBS_DB_URL
+from config.const import  BOT_TOKEN, COMMANDS, TIMEZONE, SCHEDULER_JOBS_DB_URL, LOG_FILE
 from handlers.start import router as start_router
 from services.parser.main import run_parser
 
@@ -52,7 +52,8 @@ def configure_logger():
         "level": logging.INFO,
         "format": log_format,
         "datefmt": datefmt,
-        "stream": sys.stdout
+        "filename": LOG_FILE,
+        "filemode": "a"
     }
     logging.basicConfig(**common_params)
 

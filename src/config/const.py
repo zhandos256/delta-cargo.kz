@@ -1,9 +1,13 @@
+from datetime import datetime
 from pathlib import Path
 from datetime import datetime
 
 import pytz
 
 BASE_DIR = Path(__file__).parent.parent
+
+LOGS_DIR = Path(__file__).parent.parent.parent / 'logs'
+LOG_FILE = LOGS_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.log"
 
 TIMEZONE = pytz.timezone("Asia/Almaty")
 
