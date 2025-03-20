@@ -21,7 +21,8 @@ async def on_startup(bot: Bot):
     await bot.set_my_commands(commands=COMMANDS)
     await bot.delete_webhook(drop_pending_updates=True)
 
-    scheduler.add_job(run_parser, 'cron', hour="9,12,15,18", minute=0)
+    if not scheduler.get_job(job_id="run_parser"):
+        scheduler.add_job(run_parser, 'cron', hour="9,12,15,18", minute=0, id="run_parser")
     scheduler.start()
 
 
