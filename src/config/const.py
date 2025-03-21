@@ -24,8 +24,6 @@ COMMANDS = [
     BotCommand(command="/menu", description="Template menu message"),
 ]
 
-CURRENT_DATE = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-
 HEADLESS = 1
 
 MAIN_URL_LOGIN = 'https://emir-cargo.kz/login/'

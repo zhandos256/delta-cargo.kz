@@ -14,6 +14,7 @@ from services.parser.utils import send_notification
 
 
 def get_driver(headless: bool = False):
+    service = webdriver.ChromeService("/usr/local/bin/chromedriver")
     opts = webdriver.ChromeOptions()
     if headless:
         opts.add_argument("--headless")
