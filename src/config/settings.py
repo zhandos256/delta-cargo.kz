@@ -2,26 +2,17 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from config.const import  BOT_TOKEN, COMMANDS, TIMEZONE, SCHEDULER_JOBS_DB_URL, LOG_FILE
+from config.scheduler import scheduler
+from config.const import  BOT_TOKEN, LOG_FILE
 from handlers.start import router as start_router
-from services.parser.main import run_parser
-
-jobstores = {
-    'default': SQLAlchemyJobStore(url=SCHEDULER_JOBS_DB_URL)
-}
-scheduler = BackgroundScheduler()
-scheduler.configure(jobstores=jobstores, timezone=TIMEZONE)
+from services.parser import main_func
 
 
 async def on_startup(bot: Bot):
-    await bot.set_my_commands(commands=COMMANDS)
     await bot.delete_webhook(drop_pending_updates=True)
-
-    if not scheduler.get_job(job_id="run_parser"):
-        scheduler.add_job(run_parser, 'cron', hour="9,12,15,18", minute=0, id="run_parser")
+    if not scheduler.get_job(job_id="main_func"):
+        scheduler.add_job(main_func, 'interval', minutes=15, id="main_func")
     scheduler.start()
 
 
