@@ -1,54 +1,34 @@
-import asyncio
-import logging
+from pathlib import Path
+from datetime import datetime
 
-from aiogram import Bot, Dispatcher
+import pytz
+from pydantic_settings import BaseSettings
 
-from config.scheduler import scheduler
-from config.const import  BOT_TOKEN, LOG_FILE
-from handlers.start import router as start_router
-from services.parser import main_func
+TIMEZONE = pytz.timezone("Asia/Almaty")
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # /src/config → /src → /
+LOGS_DIR = BASE_DIR / "logs"
 
-async def on_startup(bot: Bot):
-    await bot.delete_webhook(drop_pending_updates=True)
-    if not scheduler.get_job(job_id="main_func"):
-        scheduler.add_job(main_func, 'interval', minutes=15, id="main_func")
-    scheduler.start()
+# Создаём директории при необходимости
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
+class Settings(BaseSettings):
+    LOGIN: str
+    PASSWORD: str
+    LOGIN_URL: str = "https://emir-cargo.kz/login"
+    BOT_TOKEN: str
+    CHAT_ID: int
+    DEBUG: bool
 
-async def on_shutdown():
-    if scheduler:
-        scheduler.shutdown()
+    # Динамическое имя лога по дате
+    DB_FILE_PATH: Path = BASE_DIR / "cargo.db"
+    SCHEDULER_JOBS_FILE_PATH: Path = BASE_DIR / "jobs.db"
+    SCHEDULER_JOBS_DB_URL: str = f'sqlite:///{SCHEDULER_JOBS_FILE_PATH}'
+    LOG_FILE: Path = LOGS_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.log"
 
-
-async def configure_bot():
-    bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher()
-    dp.include_router(start_router)
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
-    try:
-        await dp.start_polling(bot, polling_timeout=5)
-    except Exception as e:
-        logging.exception(e)
-    finally:
-        await dp.storage.close()
-        await bot.session.close()
+    class Config:
+        env_file = BASE_DIR / ".env"
+        env_file_encoding = "utf-8"
 
 
-def configure_logger():
-    log_format = "%(asctime)s - %(levelname)s - %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
-    common_params = {
-        "level": logging.INFO,
-        "format": log_format,
-        "datefmt": datefmt,
-        "filename": LOG_FILE,
-        "filemode": "a"
-    }
-    logging.basicConfig(**common_params)
-
-
-def main():
-    configure_logger()
-    asyncio.run(configure_bot())
+settings = Settings()
