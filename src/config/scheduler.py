@@ -1,4 +1,4 @@
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from config.settings import settings, TIMEZONE
@@ -10,7 +10,7 @@ job_defaults = {
     'coalesce': True,      # если были пропущенные запуски, выполнить только один
     'max_instances': 1     # не запускать повторно, если ещё выполняется
 }
-scheduler = BackgroundScheduler(
+scheduler = AsyncIOScheduler(
     jobstores=jobstores, timezone=TIMEZONE,
     job_defaults=job_defaults
 )
