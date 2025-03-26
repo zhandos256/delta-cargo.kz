@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def on_startup(bot: Bot):
     await bot.delete_webhook(drop_pending_updates=True)
-    if not scheduler.get_job(job_id="main_func"):
+    if not scheduler.get_job(job_id="main_func", jobstore='default'):
         scheduler.add_job(main_func, 'interval', hours=1, id="main_func")
     scheduler.start()
 
