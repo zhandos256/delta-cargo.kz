@@ -2,28 +2,39 @@ import re
 import json
 import sqlite3
 import logging
-import textwrap
-from typing import Optional
+from typing import Optional, List, Dict, Tuple, Union
+
+# Тип данных для треков
+from contextlib import closing
 
 import requests
+from requests import Session
 
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
+# Типизация данных для ясности
+TrackData = Dict[str, Union[str, List[Dict[str, str]]]]
 
-def send_notification(msg: str):
-    url = f'https://api.telegram.org/bot{settings.BOT_TOKEN}/sendMessage'
+
+def send_notification(msg: str) -> None:
+    """Отправляет уведомление в Telegram."""
+    url = f"https://api.telegram.org/bot{settings.BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": settings.CHAT_ID, "text": msg}
+    
     try:
-        requests.post(url, data={'chat_id': settings.CHAT_ID, 'text': msg})
-    except Exception as e:
-        logger.exception("❌ Ошибка при отправке в Telegram:", e)
+        response = requests.post(url, data=payload, timeout=10)
+        response.raise_for_status()  # Проверяем статус ответа
+    except requests.RequestException as e:
+        logger.error(f"Ошибка отправки в Telegram: {e}")
 
 
-def init_db():
+def init_db() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
+    """Инициализирует SQLite базу данных и создаёт таблицу Items."""
     conn = sqlite3.connect(settings.DB_FILE_PATH)
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS Items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             track TEXT UNIQUE,
@@ -31,13 +42,15 @@ def init_db():
             added_at TEXT,
             arrived_at TEXT
         )
-    ''')
+    """)
     conn.commit()
     return conn, cursor
 
 
-def data_handler(data: Optional[list], cursor: sqlite3.Cursor, conn: sqlite3.Connection):
+def data_handler(data: Optional[List[TrackData]], cursor: sqlite3.Cursor, conn: sqlite3.Connection) -> None:
+    """Обрабатывает данные о треках и обновляет базу."""
     if not data:
+        logger.info("Нет данных для обработки")
         return
 
     for item in data:
@@ -45,80 +58,85 @@ def data_handler(data: Optional[list], cursor: sqlite3.Cursor, conn: sqlite3.Con
         title = item["title"]
         added_at = item["added_at"]
 
-        # Пытаемся найти warehouse с "ТРЦ «АДК»" и датой
-        adk_entry = next(
-            (h for h in item["history"]
-             if "ТРЦ «АДК»" in h["warehouse"] and h["date"]),
-            None
+        # Поиск записи с "ТРЦ «АДК»" в истории
+        arrived_at = next(
+            (h["date"] for h in item["history"] if "ТРЦ «АДК»" in h["warehouse"] and h["date"]),
+            None,
         )
 
-        arrived_at = adk_entry["date"] if adk_entry else None
-
-        # Проверяем, есть ли трек в базе
-        cursor.execute('SELECT arrived_at FROM Items WHERE track = ?', (track_code,))
+        # Проверка наличия трека в базе
+        cursor.execute("SELECT arrived_at FROM Items WHERE track = ?", (track_code,))
         result = cursor.fetchone()
 
         if result:
-            # Если уже в БД, но еще не было arrived_at → обновим и пушнем
+            # Обновляем, если arrived_at появился
             if not result[0] and arrived_at:
                 cursor.execute(
-                    'UPDATE Items SET arrived_at = ? WHERE track = ?',
-                    (arrived_at, track_code)
+                    "UPDATE Items SET arrived_at = ? WHERE track = ?",
+                    (arrived_at, track_code),
                 )
                 conn.commit()
-
-                msg = textwrap.dedent(f"""
-                    📦 Товар поступил в ADK
-                    Трек-код: {track_code}
-                    Название: {title}
-                    Дата: {arrived_at}
-                """)
-                send_notification(msg.strip())
+                send_notification(
+                    f"📦 Товар поступил в ADK\n"
+                    f"Трек-код: {track_code}\n"
+                    f"Название: {title}\n"
+                    f"Дата: {arrived_at}"
+                )
         else:
-            # Вставим даже если arrived_at пока None — БЕЗ пуша
+            # Добавляем новую запись
             cursor.execute(
-                'INSERT INTO Items(track, title, added_at, arrived_at) VALUES(?, ?, ?, ?)',
-                (track_code, title, added_at, arrived_at)
+                "INSERT OR IGNORE INTO Items (track, title, added_at, arrived_at) VALUES (?, ?, ?, ?)",
+                (track_code, title, added_at, arrived_at),
             )
             conn.commit()
 
-            # Если товар уже в ADK — пушнем
+            # Уведомление только если товар уже в ADK
             if arrived_at:
-                msg = textwrap.dedent(f"""
-                    📦 Новый товар в ADK
-                    Трек-код: {track_code}
-                    Название: {title}
-                    Дата: {arrived_at}
-                """)
-                send_notification(msg.strip())
+                send_notification(
+                    f"📦 Новый товар в ADK\n"
+                    f"Трек-код: {track_code}\n"
+                    f"Название: {title}\n"
+                    f"Дата: {arrived_at}"
+                )
 
 
-def main_func():
-    session = requests.Session()
+def main_func() -> None:
+    """Основная функция: логинится, парсит треки и обновляет базу."""
+    with Session() as session:
+        # Логинимся
+        payload = {"login": settings.LOGIN, "password": settings.PASSWORD}
+        try:
+            resp = session.post(settings.LOGIN_URL, data=payload, timeout=10)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(f"Ошибка входа: {e}")
+            return
 
-    # 2. Логинимся
-    payload = {
-        'login': settings.LOGIN,
-        'password': settings.PASSWORD,
-    }
+        if "logout" not in resp.text:
+            logger.error("Не удалось войти: 'logout' не найден в ответе")
+            return
 
-    resp = session.post(settings.LOGIN_URL, data=payload)
+        # Парсим JSON
+        match = re.search(r"this\.tracks\s*=\s*JSON\.parse\('(.+?)'\)", resp.text)
+        if not match:
+            logger.error("JSON с треками не найден")
+            return
 
-    if "logout" not in resp.text:
-        logger.info("❌ Ошибка входа")
-        return
+        raw = match.group(1)
+        try:
+            decoded = raw.encode().decode("unicode_escape")  # Упрощаем обработку escape-последовательностей
+            data = json.loads(decoded)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            logger.error(f"Ошибка парсинга JSON: {e}")
+            return
 
-    # 3. Парсим JSON из this.tracks
-    match = re.search(r"this\.tracks\s*=\s*JSON\.parse\('(.+?)'\)", resp.text)
-    if not match:
-        logger.info("❌ Не найден JSON с треками")
-        return
+        # Обрабатываем данные с базой
+        with closing(sqlite3.connect(settings.DB_FILE_PATH)) as conn:
+            with conn:  # Автоматический commit/rollback
+                cursor = conn.cursor()
+                init_db()  # Убедимся, что таблица есть
+                data_handler(data, cursor, conn)
 
-    raw = match.group(1)
-    decoded = raw.encode('utf-8').decode('unicode_escape')
-    data = json.loads(decoded)
 
-    # 4. Работа с БД
-    conn, cursor = init_db()
-    data_handler(data, cursor, conn)
-    conn.close()
+if __name__ == "__main__":
+    main_func()
