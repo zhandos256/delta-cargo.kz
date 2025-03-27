@@ -1,39 +1,54 @@
 from pathlib import Path
 from datetime import datetime
+from functools import lru_cache
 
 import pytz
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Константы
 TIMEZONE = pytz.timezone("Asia/Almaty")
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # /src/config → /src → /
 LOGS_DIR = BASE_DIR / "logs"
 
-# Создаём директории при необходимости
+# Создание директории логов с проверкой
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def generate_log_file() -> Path:
-    return LOGS_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.log"
+    """Генерирует путь к лог-файлу на основе текущей даты."""
+    date_str = datetime.now(TIMEZONE).strftime("%Y-%m-%d")
+    return LOGS_DIR / f"{date_str}.log"
+
 
 class Settings(BaseSettings):
+    """Конфигурация приложения с загрузкой из .env."""
+
+    # Обязательные поля
     LOGIN: str
     PASSWORD: str
-    LOGIN_URL: str = "https://emir-cargo.kz/login"
     BOT_TOKEN: str
     CHAT_ID: int
-    DEBUG: bool
 
-    # Динамическое имя лога по дате
+    # Поля с дефолтными значениями
+    LOGIN_URL: str = "https://emir-cargo.kz/login"
+    DEBUG: bool = False
     DB_FILE_PATH: Path = BASE_DIR / "cargo.db"
     SCHEDULER_JOBS_FILE_PATH: Path = BASE_DIR / "jobs.db"
-    SCHEDULER_JOBS_DB_URL: str = f'sqlite:///{SCHEDULER_JOBS_FILE_PATH}'
+    SCHEDULER_JOBS_DB_URL: str = Field(default_factory=lambda: f"sqlite:///{BASE_DIR / 'jobs.db'}")
     LOG_FILE: Path = Field(default_factory=generate_log_file)
 
-    class Config:
-        env_file = BASE_DIR / ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=BASE_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # Игнорировать лишние переменные в .env
+    )
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+# Инициализация настроек
+settings = get_settings()
