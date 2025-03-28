@@ -1,17 +1,22 @@
-env
-venv
+# Virtual environments
+env/
+venv/
 .env
-.venv
+.venv/
 
-*.logs
+# Log files
 *.log
+*.logs
 
+# Database files
 *.db
 *.sqlite
 *.sqlite3
 
+# System files
 .DS_Store
 
+# Python bytecode and build files
 __pycache__/
 *.py[cod]
 *.pyo
@@ -20,5 +25,6 @@ __pycache__/
 dist/
 build/
 
+# IDE-specific files
 .vscode/
 .idea/
