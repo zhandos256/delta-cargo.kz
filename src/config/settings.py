@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     CHAT_ID: int
 
     # Поля с дефолтными значениями
-    LOGIN_URL: str = "https://emir-cargo.kz/login"
+    LOGIN_URL: str = "https://delta-cargo.kz/login"
     DEBUG: bool = False
     DB_FILE_PATH: Path = BASE_DIR / "cargo.db"
     SCHEDULER_JOBS_FILE_PATH: Path = BASE_DIR / "jobs.db"
