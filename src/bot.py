@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 
 from config.logger import setup_logger
 from config.settings import settings
-from config.scheduler import scheduler
+from config.scheduler import scheduler, add_default_job
 from handlers.start import router as start_router
 from services.tracker import main_func
 
@@ -22,14 +22,7 @@ async def on_startup(bot: Bot) -> None:
         await bot.delete_webhook(drop_pending_updates=True)
         logger.info("Webhook удалён, пропущены ожидающие обновления.")
 
-        if not scheduler.get_job(job_id=SCHEDULER_JOB_ID, jobstore="default"):
-            scheduler.add_job(
-                main_func,
-                trigger="interval",
-                minutes=SCHEDULER_INTERVAL_MINUTES,
-                id=SCHEDULER_JOB_ID,
-                replace_existing=True,
-            )
+        add_default_job(main_func, minutes=SCHEDULER_INTERVAL_MINUTES)
         scheduler.start()
     except Exception as e:
         logger.error(f"Ошибка при запуске: {e}", exc_info=True)
